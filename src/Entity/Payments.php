@@ -2,64 +2,88 @@
 
 namespace App\Entity;
 
+// use ApiPlatform\Metadata\ApiResource;
+
+use ApiPlatform\Core\Annotation\ApiFilter;
+use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use App\Repository\PaymentsRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
+#[ApiResource(
+    order: ['id' => 'DESC'],
+    collectionOperations: [
+        'get' => ['method' => 'GET'],
+        'post' => ['method' => 'POST']
+    ],
+    itemOperations: [
+        'get' => ['method' => 'GET'], // Permite obtener un solo pago
+        'patch' => ['method' => 'PATCH']
+    ]
+)]
+#[ApiFilter(SearchFilter::class, properties: ['idReferencia' => 'exact'])]
 #[ORM\Entity(repositoryClass: PaymentsRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Payments
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue(strategy: "SEQUENCE")]
+    #[ORM\SequenceGenerator(sequenceName: "payments_id_seq", allocationSize: 1, initialValue: 1)]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $id_referencia = null;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $idReferencia = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column]
     private ?int $valor = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $pasarela = null;
+    #[ORM\Column(length: 255, options: ["default" => "wompi"])]
+    private ?string $pasarela = "wompi";
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $link = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $estado = null;
+    #[ORM\Column(length: 255)]
+    private ?string $estado = 'IN PROCCESS';
 
     #[ORM\Column(type: Types::DATETIMETZ_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $vigencia_link = null;
+    private ?\DateTimeInterface $vigenciaLink = null;
 
     #[ORM\Column(type: Types::DATETIMETZ_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $fecha_link = null;
+    private ?\DateTimeInterface $fechaLink = null;
 
     #[ORM\Column(nullable: true)]
-    private ?int $id_organizacion = null;
+    private ?int $idOrganizacion = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $password = null;
 
     #[ORM\Column]
-    private ?\DateTimeImmutable $created_at = null;
+    private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $customer_id = null;
+    #[ORM\ManyToOne(targetEntity: Customer::class, inversedBy: "payments")]
+    #[ORM\JoinColumn(name: "customer", referencedColumnName: "id", nullable: false)]
+    private ?Customer $customer = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $idTransaccion = null;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getIdReferencia(): ?int
+    public function getIdReferencia(): ?string
     {
-        return $this->id_referencia;
+        return $this->idReferencia;
     }
 
-    public function setIdReferencia(?int $id_referencia): static
+    public function setIdReferencia(?string $idReferencia): static
     {
-        $this->id_referencia = $id_referencia;
+        $this->idReferencia = $idReferencia;
 
         return $this;
     }
@@ -114,36 +138,36 @@ class Payments
 
     public function getVigenciaLink(): ?\DateTimeInterface
     {
-        return $this->vigencia_link;
+        return $this->vigenciaLink;
     }
 
-    public function setVigenciaLink(?\DateTimeInterface $vigencia_link): static
+    public function setVigenciaLink(?\DateTimeInterface $vigenciaLink): static
     {
-        $this->vigencia_link = $vigencia_link;
+        $this->vigenciaLink = $vigenciaLink;
 
         return $this;
     }
 
     public function getFechaLink(): ?\DateTimeInterface
     {
-        return $this->fecha_link;
+        return $this->fechaLink;
     }
 
-    public function setFechaLink(?\DateTimeInterface $fecha_link): static
+    public function setFechaLink(?\DateTimeInterface $fechaLink): static
     {
-        $this->fecha_link = $fecha_link;
+        $this->fechaLink = $fechaLink;
 
         return $this;
     }
 
     public function getIdOrganizacion(): ?int
     {
-        return $this->id_organizacion;
+        return $this->idOrganizacion;
     }
 
-    public function setIdOrganizacion(?int $id_organizacion): static
+    public function setIdOrganizacion(?int $idOrganizacion): static
     {
-        $this->id_organizacion = $id_organizacion;
+        $this->idOrganizacion = $idOrganizacion;
 
         return $this;
     }
@@ -162,24 +186,37 @@ class Payments
 
     public function getCreatedAt(): ?\DateTimeImmutable
     {
-        return $this->created_at;
+        return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $created_at): static
+    #[ORM\PrePersist]
+    public function setCreatedAt(): static
     {
-        $this->created_at = $created_at;
+        $this->createdAt = new \DateTimeImmutable();
 
         return $this;
     }
 
-    public function getCustomerId(): ?int
+    public function getCustomer(): ?Customer
     {
-        return $this->customer_id;
+        return $this->customer;
     }
 
-    public function setCustomerId(?int $customer_id): static
+    public function setCustomer(?Customer $customer): static
     {
-        $this->customer_id = $customer_id;
+        $this->customer = $customer;
+
+        return $this;
+    }
+
+    public function getIdTransaccion(): ?string
+    {
+        return $this->idTransaccion;
+    }
+
+    public function setIdTransaccion(?string $idTransaccion): static
+    {
+        $this->idTransaccion = $idTransaccion;
 
         return $this;
     }
