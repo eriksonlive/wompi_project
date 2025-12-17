@@ -37,7 +37,8 @@ class RoutesController extends AbstractController
             SELECT c FROM App\Entity\Customer c
             WHERE c.email = :email OR c.customernumber = :customerNumber
         ")->setParameter('email', $data['email'])
-            ->setParameter('customerNumber', $data['document']);
+            ->setParameter('customerNumber', $data['document'])
+            ->setMaxResults(1);
 
         $customer = $query->getOneOrNullResult();
 
