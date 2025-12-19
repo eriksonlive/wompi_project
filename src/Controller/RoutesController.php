@@ -20,7 +20,13 @@ class RoutesController extends AbstractController
     #[Route('/', name: 'index')]
     public function fetchData(Request $request, PaymentsRepository $payments)
     {
-        return $this->render('index.html.twig');
+        $paymentsData = $payments->findBy([], ['id' => 'DESC']);
+
+        dump($paymentsData);
+
+        return $this->render('index.html.twig', [
+            'payments' => $paymentsData
+        ]);
     }
 
     #[Route("/wompi", name: "wompi_transaction", methods: ["POST"])]
